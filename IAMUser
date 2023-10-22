@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Create a user equipped with permissions to create a copilot deployment stack."
+Resources:
+  copilotUser:
+    Type: "AWS::IAM::User"
+  copilotUserGroup:
+    Type: "AWS::IAM::Group"
+    Properties:
+      GroupName: copilotUserGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/AWSCloudMapFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonECS_FullAccess
+        - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+  addUserToGroup:
+    Type: "AWS::IAM::UserToGroupAddition"
+    Properties:
+      GroupName: !Ref copilotUserGroup
+      Users:
+        - !Ref copilotUser
+  copilotAccessKeys:
+    Type: "AWS::IAM::AccessKey"
+    Properties:
+      UserName:
+        Ref: "copilotUser"
+  copilotPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "copilotPolicy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: "*"
+      Groups:
+        - !Ref copilotUserGroup
+Outputs:
+  AwsAccessKey:
+    Description: "Access token"
+    Value: !Ref copilotAccessKeys
+  AwsAccessToken:
+    Description: "Access token"
+    Value: !GetAtt copilotAccessKeys.SecretAccessKey
